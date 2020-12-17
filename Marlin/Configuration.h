@@ -169,6 +169,7 @@
 #define HEATER_0_MAXTEMP 275    // 275 C limit in Ultimaker 2 since the PTFE coupler degrades rapidly at higher temperatures.
 #define HEATER_1_MAXTEMP 275
 #define HEATER_2_MAXTEMP 275
+#define SYRINGE_MAXTEMP 50
 #define BED_MAXTEMP 130
 
 //Check if the heater heats up MAX_HEATING_TEMPERATURE_INCREASE within MAX_HEATING_CHECK_MILLIS while the PID was at the maximum.
@@ -262,7 +263,7 @@
 
 //this prevents dangerous Extruder moves, i.e. if the temperature is under the limit
 //can be software-disabled for whatever purposes by
-#define PREVENT_DANGEROUS_EXTRUDE
+//#define PREVENT_DANGEROUS_EXTRUDE
 //if PREVENT_DANGEROUS_EXTRUDE is on, you can still disable (uncomment) very long bits of extrusion separately.
 #define PREVENT_LENGTHY_EXTRUDE
 

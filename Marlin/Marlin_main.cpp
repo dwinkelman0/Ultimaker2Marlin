@@ -1356,7 +1356,7 @@ static void process_command()
       if(setTargetedHotend(104)){
         break;
       }
-      if (code_seen('S')) setTargetHotend(code_value(), tmp_extruder);
+      if (code_seen('S')) setTargetHotend(code_value(), getTempId(tmp_extruder, TEMP_SYRINGE));
       break;
     case 140: // M140 set bed temp
 #if defined(TEMP_BED_PIN) && TEMP_BED_PIN > -1
@@ -1371,9 +1371,9 @@ static void process_command()
         }
       #if defined(TEMP_0_PIN) && TEMP_0_PIN > -1
         SERIAL_PROTOCOLPGM("ok T:");
-        SERIAL_PROTOCOL_F(degHotend(tmp_extruder),1);
+        SERIAL_PROTOCOL_F(degHotend(getTempId(tmp_extruder, TEMP_SYRINGE)), 1);
         SERIAL_PROTOCOLPGM(" /");
-        SERIAL_PROTOCOL_F(degTargetHotend(tmp_extruder),1);
+        SERIAL_PROTOCOL_F(degTargetHotend(getTempId(tmp_extruder, TEMP_SYRINGE)),1);
         #if defined(TEMP_BED_PIN) && TEMP_BED_PIN > -1
           SERIAL_PROTOCOLPGM(" B:");
           SERIAL_PROTOCOL_F(degBed(),1);
@@ -1399,7 +1399,7 @@ static void process_command()
       #ifdef AUTOTEMP
         autotemp_enabled=false;
       #endif
-      if (code_seen('S')) setTargetHotend(code_value(), tmp_extruder);
+      if (code_seen('S')) setTargetHotend(code_value(), getTempId(tmp_extruder, TEMP_SYRINGE));
       #ifdef AUTOTEMP
         if (code_seen('S')) autotemp_min=code_value();
         if (code_seen('B')) autotemp_max=code_value();
@@ -2215,11 +2215,11 @@ static void process_command()
       else
         tmp_select = 0;
       machinesettings_tempsave[tmp_select].feedmultiply = feedmultiply;
-      machinesettings_tempsave[tmp_select].BedTemperature = target_temperature_bed;
+      machinesettings_tempsave[tmp_select].BedTemperature = 0;
       machinesettings_tempsave[tmp_select].fanSpeed = fanSpeed;
       for (int i=0; i<EXTRUDERS; i++)
       {
-        machinesettings_tempsave[tmp_select].HotendTemperature[i] = target_temperature[i];
+        machinesettings_tempsave[tmp_select].HotendTemperature[i] = 0;
         machinesettings_tempsave[tmp_select].extrudemultiply[i] = extrudemultiply[i];
       }
       for (int i=0; i<NUM_AXIS; i++)
@@ -2251,11 +2251,11 @@ static void process_command()
       if (machinesettings_tempsave[tmp_select].has_saved_settings > 0)
       {
         feedmultiply = machinesettings_tempsave[tmp_select].feedmultiply;
-        target_temperature_bed = machinesettings_tempsave[tmp_select].BedTemperature;
+        //target_temperature_bed = machinesettings_tempsave[tmp_select].BedTemperature;
         fanSpeed = machinesettings_tempsave[tmp_select].fanSpeed;
         for (int i=0; i<EXTRUDERS; i++)
         {
-          target_temperature[i] = machinesettings_tempsave[tmp_select].HotendTemperature[i];
+          //target_temperature[i] = machinesettings_tempsave[tmp_select].HotendTemperature[i];
           extrudemultiply[i] = machinesettings_tempsave[tmp_select].extrudemultiply[i];
         }
         for (int i=0; i<NUM_AXIS; i++)
