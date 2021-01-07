@@ -23,7 +23,7 @@ if __name__ == '__main__':
             "#ifndef DUKE_BIOPRINTER_THERMISTOR_TABLE\n",
             "#define DUKE_BIOPRINTER_THERMISTOR_TABLE\n",
             "\n",
-            "#include \"Marlin.h\"\n",
+            "#include \"Thermal.h\"\n",
             "\n",
             "/* Maps analog input value to temperature in Celsius\n",
             "   Current setting: {:.1e} thermistor, {:.1e} series resistor\n".format(Rt0, RS),
