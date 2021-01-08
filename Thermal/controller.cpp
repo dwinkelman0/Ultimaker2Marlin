@@ -23,7 +23,7 @@ Controller::Controller(const int inputPin, const int outputPin, const float p, c
     inputPin_(inputPin), outputPin_(outputPin),
     p_(p), i_(i), d_(d),
     currentTemp_(0),
-    targetTemp_(0),
+    targetTemp_(20),
     integralTemp_(0),
     index_(0),
     maxTemp_(999) {
@@ -34,14 +34,13 @@ Controller::Controller(const int inputPin, const int outputPin, const float p, c
   if (outputPin >= 0) {
     pinMode(outputPin, OUTPUT);
   }
-  memset(errors_, sizeof(errors_), 0);
-  memset(times_, sizeof(times_), 0);
+  reset();
 }
 
 void Controller::adjustPower() {
   // Time is always measured from the start of an analog conversion
   if (inputPin_ < 0) return;
-  uint32_t currentTime = micros();
+  float currentTime = micros() * 1e-6;
 
   // Oversample to get better resolution (13 bits)
   int currentTempRaw = 0;
@@ -49,17 +48,43 @@ void Controller::adjustPower() {
     currentTempRaw += analogRead(inputPin_);
   }
   currentTemp_ = convertAnalogToTemp(currentTempRaw);
-  errors_[index_] = currentTemp_ - targetTemp_;
-  times_[index_] = currentTime * 1e-6;
+  float error = currentTemp_ - targetTemp_;
+  float prevTime = times_[index_ == 0 ? NUM_HISTORY - 1 : index_ - 1];
+  errors_[index_] = error;
+  times_[index_] = currentTime;
   index_ = (index_ + 1) % NUM_HISTORY;
 
-  float derivative = calcDerivative();
-  
-  //Serial.println(String("temp: ") + String(currentTemp_));
-  Serial.println(String("time: ") + String(derivative));
+  // Check for maximum temperature
+  if (outputPin_ < 0) return;
+  if (currentTemp_ > maxTemp_) {
+    analogWrite(outputPin_, 0);
+    return;
+  }
 
   // Calculate PID parameters
-  if (outputPin_ < 0) return;
+  float derivative = calcDerivative();
+  integralTemp_ += error * (currentTime - prevTime) / 2;
+  float pTerm = p_ * error;
+  float iTerm = constrain(i_ * integralTemp_, -128, 0);
+  float dTerm = constrain(d_ * derivative, -255, 255);
+  int16_t power = -(pTerm + iTerm + dTerm);
+  analogWrite(outputPin_, constrain(power, 0, 255));
+  
+  Serial.print(String(error));
+  Serial.print(" ");
+  Serial.print(String(-pTerm / 25.5f));
+  Serial.print(" ");
+  Serial.print(String(-iTerm / 25.5f));
+  Serial.print(" ");
+  Serial.print(String(-dTerm / 25.5f));
+  Serial.println("");
+}
+
+void Controller::reset() {
+  integralTemp_ = 0.0f;
+  index_ = 0;
+  memset(errors_, sizeof(errors_), 0);
+  memset(times_, sizeof(times_), 0);
 }
 
 float Controller::calcDerivative() const {

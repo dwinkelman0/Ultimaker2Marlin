@@ -20,6 +20,7 @@ static Extruder extruders[1];
 static CommandQueue cq;
 static void doNextCode() {
   // Must find an M code to continue
+  cq.loadNextLine();
   int32_t mCode;
   if (!cq.getInt('M', &mCode)) return;
   
@@ -40,22 +41,27 @@ static void doNextCode() {
 
         extruders[extruderNumber].syringe.setTargetTemp(temperature);
         extruders[extruderNumber].needle.setTargetTemp(temperature);
-        Serial.println(String("# Set extruder temperature: ") + String(temperature));
+        //Serial.println(String("# Set extruder temperature: ") + String(temperature));
       } break;
   }
 }
 
 
 void setup() {
-  extruders[0].syringe = Controller(A0, 2, 1.0f, 1.0f, 1.0f);
-  extruders[0].needle = Controller(A1, 11, 1.0f, 1.0f, 1.0f);
-
+  extruders[0].syringe = Controller(A0, 2, 4.0f, 0.10f, 1.0f);
+  extruders[0].needle = Controller(A1, -1, 1.0f, 1.0f, 1.0f);
   Serial.begin(115200);
+  Serial.println("temp p i d");
+  //TCCR3B &= 0xf8;
+  //TCCR3B |= 0x02;
+
+  extruders[0].syringe.setTargetTemp(30.0f);
 }
 
 
 void loop() {
   doNextCode();
   extruders[0].syringe.adjustPower();
+  //analogWrite(2, 128);
   delay(100);
 }

@@ -14,6 +14,7 @@ class Controller {
 
   /* Set the target temperature */
   inline void setTargetTemp(const float temp) {
+    reset();
     targetTemp_ = temp;
   }
 
@@ -32,6 +33,9 @@ class Controller {
   void adjustPower();
 
  private:
+  /* Reset states like integral, error ring buffer */
+  void reset();
+ 
   /* Use least-squares to calculate the recent slope of error;
    *  https://www.varsitytutors.com/hotmath/hotmath_help/topics/line-of-best-fit
    */
