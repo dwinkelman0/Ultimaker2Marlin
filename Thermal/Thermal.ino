@@ -13,7 +13,16 @@ struct Extruder {
 
 /* Global state */
 const static int NUM_EXTRUDERS = 1;
+const static int NUM_CONTROLLERS = NUM_EXTRUDERS * 2 + 2;
 static Extruder extruders[1];
+static Controller bed;
+static Controller ambient;
+static Controller *controllers[NUM_CONTROLLERS] = {
+  &ambient,
+  &bed,
+  &extruders[0].syringe,
+  &extruders[0].needle
+};
 
 
 /* Perform a single code from the queue */
@@ -41,27 +50,30 @@ static void doNextCode() {
 
         extruders[extruderNumber].syringe.setTargetTemp(temperature);
         extruders[extruderNumber].needle.setTargetTemp(temperature);
-        //Serial.println(String("# Set extruder temperature: ") + String(temperature));
       } break;
   }
 }
 
 
 void setup() {
-  extruders[0].syringe = Controller(A0, 2, 4.0f, 0.10f, 1.0f);
-  extruders[0].needle = Controller(A1, -1, 1.0f, 1.0f, 1.0f);
   Serial.begin(115200);
-  Serial.println("temp p i d");
+  
+  ambient = Controller("a0a", A0);
+  bed = Controller("b0a", A1);
+  extruders[0].syringe = Controller("s0a", A2, 2, 4.0f, 0.10f, 10.0f);
+  extruders[0].needle = Controller("n0a", A3);
+
+  // Change pulse-width modulation settings
   //TCCR3B &= 0xf8;
   //TCCR3B |= 0x02;
-
-  extruders[0].syringe.setTargetTemp(30.0f);
 }
 
 
 void loop() {
   doNextCode();
-  extruders[0].syringe.adjustPower();
-  //analogWrite(2, 128);
+  for (int i = 0; i < NUM_CONTROLLERS; ++i) {
+    controllers[i]->adjustPower();
+    controllers[i]->printTemp();
+  }
   delay(100);
 }

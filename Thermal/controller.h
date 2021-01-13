@@ -10,7 +10,8 @@
 class Controller {
  public:
   Controller();
-  Controller(const int inputPin, const int outputPin, const float p, const float i, const float d);
+  Controller(const char *code, const int inputPin);
+  Controller(const char *code, const int inputPin, const int outputPin, const float p, const float i, const float d);
 
   /* Set the target temperature */
   inline void setTargetTemp(const float temp) {
@@ -29,7 +30,11 @@ class Controller {
     return currentTemp_;
   }
 
-  /* Get current temperature and adjust power pulse width modulation */
+  void printTemp() const;
+
+  /* Get current temperature and adjust power pulse width modulation;
+   * if there is no output pin, this only does a temperature conversion
+   */
   void adjustPower();
 
  private:
@@ -61,6 +66,7 @@ class Controller {
 
   /* Miscellaneous */
   float maxTemp_;
+  char code_[4];
 };
 
 #endif

@@ -17,9 +17,11 @@ static float convertAnalogToTemp(const uint16_t analog) {
   return pgm_read_float(bioprinter_thermistor_table + offset);
 }
 
-Controller::Controller() : Controller(0, 0, 1.0f, 1.0f, 1.0f) {}
+Controller::Controller() : Controller(NULL, 0) {}
 
-Controller::Controller(const int inputPin, const int outputPin, const float p, const float i, const float d) :
+Controller::Controller(const char *code, const int inputPin) : Controller(code, inputPin, 0, 0.0f, 0.0f, 0.0f) {}
+
+Controller::Controller(const char *code, const int inputPin, const int outputPin, const float p, const float i, const float d) :
     inputPin_(inputPin), outputPin_(outputPin),
     p_(p), i_(i), d_(d),
     currentTemp_(0),
@@ -27,6 +29,18 @@ Controller::Controller(const int inputPin, const int outputPin, const float p, c
     integralTemp_(0),
     index_(0),
     maxTemp_(999) {
+
+  // Set identification code
+  if (code) {
+    code_[0] = code[0] ? code[0] : '.';
+    code_[1] = code[1] && code[0] ? code[1] : '.';
+    code_[2] = code[2] && code[1] && code[0] ? code[2] : '.';
+  }
+  else {
+    code_[0] = code_[1] = code_[2] = '.';
+  }
+  code_[3] = '\0';
+  
   // Important to not use a pull-up resistor
   if (inputPin >= 0) {
     pinMode(inputPin, INPUT);
@@ -35,6 +49,12 @@ Controller::Controller(const int inputPin, const int outputPin, const float p, c
     pinMode(outputPin, OUTPUT);
   }
   reset();
+}
+
+void Controller::printTemp() const {
+  Serial.print(code_);
+  Serial.print(" ");
+  Serial.println(String(currentTemp_));
 }
 
 void Controller::adjustPower() {
@@ -48,6 +68,11 @@ void Controller::adjustPower() {
     currentTempRaw += analogRead(inputPin_);
   }
   currentTemp_ = convertAnalogToTemp(currentTempRaw);
+
+  // Exit now if there is no output pin (i.e. this is only a sensor)
+  if (outputPin_ < 0) return;
+
+  // Compute errors and update state
   float error = currentTemp_ - targetTemp_;
   float prevTime = times_[index_ == 0 ? NUM_HISTORY - 1 : index_ - 1];
   errors_[index_] = error;
@@ -55,7 +80,6 @@ void Controller::adjustPower() {
   index_ = (index_ + 1) % NUM_HISTORY;
 
   // Check for maximum temperature
-  if (outputPin_ < 0) return;
   if (currentTemp_ > maxTemp_) {
     analogWrite(outputPin_, 0);
     return;
@@ -69,7 +93,9 @@ void Controller::adjustPower() {
   float dTerm = constrain(d_ * derivative, -255, 255);
   int16_t power = -(pTerm + iTerm + dTerm);
   analogWrite(outputPin_, constrain(power, 0, 255));
-  
+
+  #if 0
+  // Debug contributions of factors to power
   Serial.print(String(error));
   Serial.print(" ");
   Serial.print(String(-pTerm / 25.5f));
@@ -78,6 +104,7 @@ void Controller::adjustPower() {
   Serial.print(" ");
   Serial.print(String(-dTerm / 25.5f));
   Serial.println("");
+  #endif
 }
 
 void Controller::reset() {
